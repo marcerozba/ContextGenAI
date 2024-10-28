@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Visualization</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+        .headline {
+            font-size: 24px;
+            margin: 20px 0 10px;
+            color: rgb(74, 11, 255);
+            border-bottom: 2px solid rgb(74, 11, 255);
+            padding-bottom: 5px;
+        }
+        .text {
+            margin: 10px 0;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+        .image-container {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+        }
+        .image-container img {
+            max-width: 100%;
+            border-radius: 12px;
+        }
+        .button {
+            padding: 12px 24px;
+            margin-top: 10px;
+            border-radius: 5px;
+            background-color: rgb(74, 11, 255);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.2s;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .button:hover {
+            background-color: rgb(60, 9, 204);
+            transform: translateY(-2px);
+        }
+        .content {
+            margin-bottom: 30px; 
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container"></div>
+
+    <script>
+        async function loadJSON(file) {
+            const response = await fetch(file);
+            const data = await response.json();
+            return data;
+        }
+
+        function renderBox(box, container) {
+            const boxContainer = document.createElement('div');
+            boxContainer.className = 'content';
+
+            if (box.level === 'widget') {
+                // Render Image
+                if (box.options.image) {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'image-container';
+                    const img = document.createElement('img');
+                    img.src = box.options.image.src;
+                    img.alt = box.options.image.altText || 'Image';
+                    imgContainer.appendChild(img);
+                    boxContainer.appendChild(imgContainer);
+                }
+                
+                // Render Text
+                if (box.options.doc) {
+                    box.options.doc.content.forEach(contentItem => {
+                        if (contentItem.type === 'headline') {
+                            const headline = document.createElement('div');
+                            headline.className = 'headline';
+                            headline.textContent = contentItem.content[0].text;
+                            boxContainer.appendChild(headline);
+                        } else if (contentItem.type === 'paragraph') {
+                            const paragraph = document.createElement('div');
+                            paragraph.className = 'text';
+                            paragraph.textContent = contentItem.content[0].text;
+                            boxContainer.appendChild(paragraph);
+                        }
+                    });
+                }
+            }
+
+            // Render Button
+            if (box.level === 'widget') {
+                const options = box.options;
+                if (options.text) {
+                    const button = document.createElement('a');
+                    button.className = 'button';
+                    button.textContent = options.text;
+                    button.href = '#';
+                    button.style.backgroundColor = options.primaryColor || 'rgb(74, 11, 255)';
+                    button.style.color = options.secondaryColor || 'white';
+                    button.style.fontSize = `${options.fontSize || 16}px`;
+                    boxContainer.appendChild(button);
+                }
+            }
+
+            // Recursive rendering for child boxes
+            if (box.boxes) {
+                box.boxes.forEach(subBox => {
+                    renderBox(subBox, boxContainer);
+                });
+            }
+
+            container.appendChild(boxContainer);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const data = await loadJSON('test_context.json');
+            const appContainer = document.getElementById('app');
+            data.boxes.forEach(box => renderBox(box, appContainer));
+        });
+    </script>
+</body>
+</html>
